@@ -130,16 +130,16 @@ sensor:
   - platform: google_travel_time
     name: Home to Work
     api_key: xxxx
-    origin: 16407 Fox Crossing, Spring, Texas, 77379
-    destination: Three Riverway, Houston, Texas, 77056
+    origin: xxxx
+    destination: xxxx
 # can be ["driving", "walking", "bicycling", "transit"]
 #    travel_mode: driving 
 
   - platform: google_travel_time
     name: Work to Home
     api_key: xxxx
-    origin: Three Riverway, Houston, Texas, 77056
-    destination: 16407 Fox Crossing, Spring, Texas, 77379
+    origin: xxxx
+    destination: xxxx
 
   - platform: yahoo_finance
     name: Hi-Crush
@@ -157,51 +157,64 @@ sensor:
     name: Crude Oil
     symbol: CL=F
     
-  - platform: template
-    sensors:
-      Backyard_light_timer:
-        value_template: '{{(as_timestamp(now() - as_timestamp(switch.back_yard_lights.on) => 600}}'      
-
+  - platform: systemmonitor
+    resources:
+      - type: disk_use_percent
+        arg: /
+      - type: memory_use_percent
+      - type: processor_use
+    
     
 ## AUTOMATION ##
 automation:
-  - alias: 'Update Notification'
-    trigger:
-      platform: state
-      entity_id: updater.updater
-    action:
-      service: notify.notify
-      data:
+  - action:
+    - data:
         message: 'There is a new Home Assistant release available...'
-  - alias: 'HA Start'
-    trigger:
-      platform: event
-      event_type: homeassistant_start
-    action:
       service: notify.notify
-      data:
+    alias: 'Update Notification'
+    trigger:
+      - platform: state
+        entity_id: updater.updater
+  - action:
+    - data:
         message: 'HA started'      
-  - alias: 'HA Stop'
-    trigger:
-      platform: event
-      event_type: homeassistant_stop
-    action:
       service: notify.notify
-      data:
-        message: 'HA stopped'      
+    alias: 'HA Start'
+    trigger:
+      - platform: event
+        event_type: homeassistant_start
+  - action:
+    - data:
+        message: 'HA stopped'  
+      service: notify.notify
+    alias: 'HA Stop'
+    trigger:
+      - platform: event
+        event_type: homeassistant_stop
+  - action:
+      - data:
+          message: 'Backyard lights are on...'
+        service: notify.notify
+    alias: 'Backyard Timer'
+    trigger:
+      - platform: state
+        entity_id: switch.back_yard_lights
+        to: 'on'
+        for:
+          minutes: 30
 
   
 ## NOTIFICATION ##
 # notify:
 #   - name: updater
 #     platform: smtp
-#     server: xxxx
+#     server: smtp.hicrush.com
    ## port: 587
-#     sender: xxxx
+#     sender: k5map@arrl.net
     ## starttls: true
     ## username: xxx@gmail.com
     ## password: xxxx
-#     recipient: xxxx
+#     recipient: mpate@hicrush.com
     
 # Example SendGrid entry
 notify:
@@ -261,8 +274,11 @@ group:
     - sensor.crude_oil
   Automation Group:
     - automation.ha_start
-    - automation.update_notification
-    
+    - automation.update_notification    
+  System:
+    - sensor.cpu_use
+    - sensor.disk_use_
+    - sensor.ram_use
   Internet Stats:
     name: Internet
     view: yes  
@@ -294,6 +310,11 @@ group:
     view: yes
     entities:
       - group.automation_group
+  System Group:
+    name: System
+    view: yes
+    entities:
+      - group.system
 
 
 #  •platform: mqtt
